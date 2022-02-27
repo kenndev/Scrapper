@@ -12,5 +12,6 @@ class Article extends Model
         'title',
         'description',
         'status',
+        'excerpt'
     ];
 }
