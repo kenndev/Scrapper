@@ -1,0 +1,1 @@
+Scraper application based on Laravel and Vue 3
