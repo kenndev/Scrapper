@@ -53,9 +53,15 @@ export default {
     setup(props, context) {
         const toast = useToast();
         const performAction = async (model_id) => {
-            const res = await axios.get("/api/status/" + model_id);
+            // const res = await axios.get("/api/status/" + model_id);
+            // context.emit('update-table','table changed');
+            // toast.success(res.data.data[0].message, {
+            //     timeout: 5000,
+            // });
+
+            const res = await axios.get("/api/delete/" + model_id);
             context.emit('update-table','table changed');
-            toast.success(res.data.data[0].message, {
+            toast.success(res.data.data.message, {
                 timeout: 5000,
             });
         };

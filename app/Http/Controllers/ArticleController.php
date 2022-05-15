@@ -20,21 +20,52 @@ class ArticleController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function export($id, $date)
     {
-        $articles = Article::get();
-        return view('articles', compact('articles'));
+        return Excel::download(new ArticlesExport($id, $date), 'articles.xlsx');
     }
 
-    public function export()
+    public function clear()
     {
-        return Excel::download(new ArticlesExport, 'articles.xlsx');
+        $article = Article::get();
+        foreach ($article as $item) {
+            $a = Article::findOrFail($item->id);
+            $a->status = 0;
+            $a->save();
+        }
+        echo "Done";
     }
 
-    public function getArticlesApi()
+    public function updateArticle(Request $request)
     {
-        $articles = Article::get();
-        return new ArticlesResource($articles);
+        $article = Article::findOrFail($request->input('id'));
+        $article->title = $request->input('title');
+        $article->description = $request->input('description');
+        if ($article->edited == 0) {
+            $article->edited = 1;
+        }
+        $article->save();
+        $response["message"] = "Record has been updated successfully";
+        return new ArticlesResource($response);
+    }
+
+    public function delete($id)
+    {
+        $article = Article::findOrFail($id);
+        $article->delete();
+        $response["message"] = "Success. Finished Deleting";
+        return new ArticlesResource($response);
+    }
+
+    public function deleteBulk(Request $request)
+    {
+        $article_ids = $request->input('ids');
+        foreach ($article_ids as $id) {
+            $article = Article::findOrFail($id);
+            $article->delete();
+        }
+        $response["message"] = "Success. Finished Deleting";
+        return new ArticlesResource($response);
     }
 
     /**
@@ -136,7 +167,7 @@ class ArticleController extends Controller
         $perPage = $request->input('per_page') ?? self::PER_PAGE;
         $companySort =  $request->input('company_name');
 
-        $query = Article::orderBy($sortField, $sortOrder);
+        $query = Article::where('status', 0)->orderBy($sortField, $sortOrder);
 
         if (!is_null($searchInput)) {
             $searchQuery = "%$searchInput%";
@@ -203,7 +234,7 @@ class ArticleController extends Controller
     public function getNerdMyPaper()
     {
         $url = Url::where('name', 'Nerdmypaper')->first();
-        
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url->url);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
@@ -286,14 +317,14 @@ class ArticleController extends Controller
     public function getSkilledPapers()
     {
         $url = Url::where('name', 'Skilledpapers')->first();
-        
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url->url);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $response = curl_exec($ch);
         curl_close($ch);
-        
+
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
@@ -372,7 +403,7 @@ class ArticleController extends Controller
     public function getWriteTasks()
     {
         $url = Url::where('name', 'Writertask')->first();
-        
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url->url);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
@@ -501,7 +532,7 @@ class ArticleController extends Controller
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $response = curl_exec($ch);
         curl_close($ch);
-        
+
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 

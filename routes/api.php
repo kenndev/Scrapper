@@ -19,8 +19,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('get-articles', [ArticleController::class, 'datatableIndex']);
+Route::post('update-article', [ArticleController::class, 'updateArticle']);
+Route::get('delete/{id}',[ArticleController::class, 'delete']);
 Route::get('status/{id}', [ArticleController::class, 'status']);
-Route::get('exportarticles', [ArticleController::class, 'export']);
+Route::get('exportarticles/{id}/{date}', [ArticleController::class, 'export']);
 Route::get('companies', [ArticleController::class, 'companies']);
+Route::post('deletebulk',[ArticleController::class, 'deleteBulk']);
+
+Route::get('clear',[ArticleController::class, 'clear']);
 
 Route::get('article-details/{id}', [ArticleController::class, 'show']);

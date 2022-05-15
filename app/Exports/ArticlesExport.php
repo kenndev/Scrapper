@@ -7,24 +7,48 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
+use Carbon\Carbon;
 
 class ArticlesExport implements FromCollection, WithHeadings, WithEvents
 {
+    protected $id;
+
+    function __construct($id, $date)
+    {
+        $this->id = $id;
+        $this->date = $date;
+    }
     /**
      * @return \Illuminate\Support\Collection
      */
     public function collection()
     {
-        $article = Article::leftJoin('urls', 'articles.url_id', '=', 'urls.id')
-            ->select('articles.id', 'articles.title', 'articles.description', 'articles.created_at', 'urls.name as category')
-            ->where('status', '!=', 1)
-            ->orWhereNull('status')
-            ->get();
+        $newDate = Carbon::createFromFormat('d-m-Y', $this->date)->format('Y-m-d');
+        if ($this->id > 0) {
+            $article = Article::leftJoin('urls', 'articles.url_id', '=', 'urls.id')
+                ->select('articles.id', 'articles.title', 'articles.description', 'articles.created_at', 'urls.name as company')
+                ->where('status', '!=', 1)
+                ->where('edited', 1)
+                ->where('articles.url_id', $this->id)
+                ->whereDate('articles.created_at', $newDate)
+                ->orWhereNull('status')
+                ->get();
+        }
+
+        if ($this->id == 0) {
+            $article = Article::leftJoin('urls', 'articles.url_id', '=', 'urls.id')
+                ->select('articles.id', 'articles.title', 'articles.description', 'articles.created_at', 'urls.name as company')
+                ->where('status', '!=', 1)
+                ->where('edited', 1)
+                ->whereDate('articles.created_at', $newDate)
+                ->orWhereNull('status')
+                ->get();
+        }
 
         $collection =  collect();
 
         foreach ($article as $item) {
-            $collection->push(['id' => $item->id, 'date' => $item->created_at, 'title' => $item->title, 'description' => strip_tags($item->description), 'category' => $item->category]);
+            $collection->push(['ID' => $item->id, 'Date' => $item->created_at, 'Title' => $item->title, 'Description' => strip_tags($item->description), 'Company' => $item->company]);
             $stolen_article = Article::findOrFail($item->id);
             $stolen_article->status = 1;
             $stolen_article->save();
@@ -43,11 +67,11 @@ class ArticlesExport implements FromCollection, WithHeadings, WithEvents
     public function headings(): array
     {
         return [
-            'id',
-            'date',
-            'title',
-            'description',
-            'category',
+            'ID',
+            'Date',
+            'Title',
+            'Description',
+            'Company',
         ];
     }
 

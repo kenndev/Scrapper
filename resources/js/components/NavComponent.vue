@@ -1,6 +1,6 @@
 <template>
     <router-link
-        class="navbar-brand"
+        class="navbar-brand headColor"
         :to="{
             name: 'home',
         }"
@@ -15,4 +15,8 @@ export default {
 };
 </script>
 
-<style></style>
+<style>
+.headColor {
+    color: rgba(236, 242, 244, 1) !important;
+}
+</style>

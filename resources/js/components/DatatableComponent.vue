@@ -94,7 +94,7 @@
                         v-for="data in tableData"
                         :key="data"
                         :class="{
-                            highlight: data['status'] == 1,
+                            highlight: data['edited'] == 1,
                         }"
                     >
                         <td
@@ -102,6 +102,16 @@
                             v-for="column in columns"
                             :key="column"
                         >
+                            <div v-if="column === 'select'">
+                                <label class="form-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        :value="data.id"
+                                        v-model="selected"
+                                    />
+                                    <i class="form-icon"></i>
+                                </label>
+                            </div>
                             <div v-if="column === 'actions'">
                                 <actions
                                     :model_id="data.id"
@@ -109,10 +119,14 @@
                                     @update-table="tableUpdated"
                                 />
                             </div>
-                            <div v-else-if="column == 'created_at'">
-                                {{ moment(data[column]).format("YYYY-MM-DD") }}
+                            <div
+                                v-if="column == 'created_at'"
+                                @click="rowClicked(data.id)"
+                            >
+                                {{ moment(data[column]).format("DD-MM-YYYY") }}
                             </div>
                             <div
+                                @click="rowClicked(data.id)"
                                 v-else
                                 v-html="
                                     column == 'description'
@@ -135,13 +149,15 @@
     </div>
 </template>
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, reactive } from "vue";
 import axios from "axios";
 import Paginator from "./PaginatorComponent.vue";
 import Actions from "./ActionsComponent.vue";
 import moment from "moment";
+import router from "../router";
 import { useLoading } from "vue3-loading-overlay";
 import "vue3-loading-overlay/dist/vue3-loading-overlay.css";
+import { useToast } from "vue-toastification";
 export default {
     name: "Datatable",
     props: {
@@ -162,10 +178,15 @@ export default {
         Paginator,
         Actions,
     },
-    setup(props) {
+    setup(props, { expose }) {
         let loader = useLoading();
 
         const pagination_reload = ref(0);
+        const selected = ref([]);
+
+        const deleteArticlesId = reactive({
+            ids: selected,
+        });
 
         const companies = ref([]);
         const tableData = ref([]);
@@ -209,7 +230,6 @@ export default {
             //reload pagination component of parent reload
             loader.hide();
             pagination_reload.value++;
-            
         };
 
         const updateSortColumn = (column) => {
@@ -220,6 +240,10 @@ export default {
                 sortOrder.value = "desc";
             }
             fetchData();
+        };
+
+        const rowClicked = (articleid) => {
+            router.push({ name: "edit", params: { id: articleid } });
         };
 
         const handleSearch = () => {
@@ -256,6 +280,32 @@ export default {
             fetchData();
         });
 
+        const getCompanyName = () => {
+            return companyName.value;
+        };
+
+        const getSelectedArticles = async () => {
+            try {
+                const toast = useToast();
+                let res = await axios.post("api/deletebulk", {
+                    ...deleteArticlesId,
+                });
+                fetchData();
+                toast.success(res.data.data.message, {
+                    timeout: 5000,
+                });
+
+            } catch (error) {
+                console.log(error);
+            }
+
+            // selected.value.forEach((element) => {
+            //     console.log(element);
+            // });
+        };
+
+        expose({ getCompanyName, getSelectedArticles });
+
         return {
             tableData,
             sortField,
@@ -275,14 +325,21 @@ export default {
             fetchCompanies,
             handleCompany,
             companies,
-            pagination_reload
+            pagination_reload,
+            getCompanyName,
+            companyName,
+            rowClicked,
+            selected,
+            getSelectedArticles,
+            deleteArticlesId,
         };
     },
 };
 </script>
 <style scoped>
 .highlight {
-    background-color: rgba(0, 128, 128, 0.6);
+    /* background-color: rgba(0, 128, 128, 0.6); */
+    background-color: rgb(63, 224, 208);
 }
 .nothighlighted {
     background-color: rgba(241, 4, 16, 0.3);
@@ -301,5 +358,4 @@ tr:hover {
 .selecs {
     display: flex;
 }
-
 </style>
