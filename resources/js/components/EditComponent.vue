@@ -5,40 +5,25 @@
                 <form name="myForm" class="" @submit.prevent="updateArticle">
                     <div class="row mb-3">
                         <div class="">
-                            <label for="TopIc" class="col-sm-3 col-form-label"
-                                >Title<span class="must-fill">*</span></label
-                            >
-                            <textarea
-                                id="Title"
-                                type="text"
-                                class="form-control"
-                                name="Title"
-                                v-model="form.title"
-                                rows="3"
-                                required
-                                aria-label="Title"
-                            />
+                            <label for="TopIc" class="col-sm-3 col-form-label">Title<span
+                                    class="must-fill">*</span></label>
+                            <textarea id="Title" type="text" class="form-control" name="Title" v-model="form.title"
+                                rows="3" required aria-label="Title" />
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="">
-                            <label
-                                for="exampleFormControlTextarea1"
-                                class="col-sm-3 col-form-label"
-                                >Description</label
-                            >
-                            <ckeditor
-                                :editor="ClassicEditor"
-                                v-model="form.description"
-                                :config="editorConfig"
-                            ></ckeditor>
+                            <label for="exampleFormControlTextarea1" class="col-sm-3 col-form-label">Description</label>
+                            <ckeditor :editor="ClassicEditor" v-model="form.description" :config="editorConfig">
+                            </ckeditor>
                         </div>
                     </div>
-                    <div
-                        class="col-md-12 form-btn d-flex flex-row justify-content-center"
-                    >
+                    <div class="col-md-12 form-btn d-flex flex-row justify-content-center">
                         <button type="sumbit" class="btn btn-md btn-primary">
                             Update Article
+                        </button>
+                        <button type="button" @click="deleteArticle(form.id)" class="ms-1 btn btn-md btn-warning">
+                            Delete Article
                         </button>
                     </div>
                 </form>
@@ -52,6 +37,7 @@ import axios from "axios";
 import { useToast } from "vue-toastification";
 import { reactive, onMounted, ref } from "vue";
 import router from '../router';
+import { isIntegerKey } from "@vue/shared";
 
 const editorConfig = reactive({});
 const errors = ref([]);
@@ -60,12 +46,21 @@ let props = defineProps({
         required: true,
         type: String,
     },
+    company: {
+        type: String,
+        default: 0,
+    },
+    page: {
+        type: String,
+        default: 1,
+    }
 });
 
 const form = reactive({
     title: "",
     description: "",
     id: props.id,
+    company: "",
 });
 
 
@@ -73,6 +68,7 @@ const fetchArticle = async () => {
     const response = await axios.get("/api/article-details/" + props.id);
     form.description = response.data.data.description;
     form.title = response.data.data.title;
+    form.company = response.data.data.url_id;
 };
 
 const updateArticle = async () => {
@@ -83,7 +79,21 @@ const updateArticle = async () => {
         toast.success(res.data.data.message, {
             timeout: 5000,
         });
-        router.push({name: "home"});
+        if (props.company == 0) {
+            router.push({
+                name: "home", query: {
+                    page: props.page,
+                },
+            });
+        } else {
+            router.push({
+                name: "home", query: {
+                    company: form.company,
+                    page: props.page,
+                },
+            });
+        }
+        // router.go(-1)
     } catch (error) {
         if (error.res.status === 422) {
             errors.value = error.res.data.errors;
@@ -91,7 +101,32 @@ const updateArticle = async () => {
     }
 };
 
+const deleteArticle = async (article_id) => {
+    const toast = useToast();
+    if (confirm('Are you sure you want to delete this record?')) {
+        const res = await axios.get("/api/delete/" + article_id);
+        if (props.company == 0) {
+            router.push({
+                name: "home", query: {
+                    page: props.page,
+                },
+            });
+        } else {
+            router.push({
+                name: "home", query: {
+                    company: form.company,
+                    page: props.page,
+                },
+            });
+        }
+        toast.success(res.data.data.message, {
+            timeout: 5000,
+        });
+    }
+};
+
 onMounted(() => {
+    console.log(props.company + " " + props.page)
     fetchArticle();
 });
 </script>

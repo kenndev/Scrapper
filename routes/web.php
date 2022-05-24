@@ -23,7 +23,7 @@ Route::middleware('auth')->get('/articles',[ArticleController::class, 'index']);
 
 Route::middleware('auth')->get('/exportarticles', [ArticleController::class, 'export'])->name('export.articles');
 
-//Route::get('test',[ArticleController::class,'getWriteTasks']);
+//Route::get('test',[ArticleController::class,'getHomeworkEssayMarketPapers']);
 
 Auth::routes(['register' => false]);
 

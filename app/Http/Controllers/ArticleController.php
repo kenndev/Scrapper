@@ -604,4 +604,120 @@ class ArticleController extends Controller
             //echo ('<p><b>' . $string . '</b></p>' . $item->content->rendered . '</br></br>');
         }
     }
+
+    //Get Emergency Essay
+    public function getEmergencyEssayPapers()
+    {
+        $url = Url::where('name', 'EmergencyEssay')->first();
+        $url2 = $url->url;
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url->url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        foreach (json_decode($response) as $item) {
+            $string = $item->title->rendered;
+
+            $getArticles = Article::where('title', $string)->exists();
+            if (!$getArticles) {
+                $article = new Article();
+                $article->title = $string;
+                $article->description = $item->content->rendered;
+                $article->url_id = $url->id;
+                $article->save();
+            }
+            //echo ('<p><b>' . $string . '</b></p>' . $item->content->rendered . '</br></br>');
+        }
+    }
+
+
+    //Get Homeworkcraft Essay
+    public function getHomeworkcraftPapers()
+    {
+        $url = Url::where('name', 'Homeworkcraft')->first();
+        $url2 = $url->url;
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url->url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        foreach (json_decode($response) as $item) {
+            $string = $item->title->rendered;
+
+            $getArticles = Article::where('title', $string)->exists();
+            if (!$getArticles) {
+                $article = new Article();
+                $article->title = $string;
+                $article->description = $item->content->rendered;
+                $article->url_id = $url->id;
+                $article->save();
+            }
+            //echo ('<p><b>' . $string . '</b></p>' . $item->content->rendered . '</br></br>');
+        }
+    }
+
+
+
+    //Get Homework Essay Market
+    public function getHomeworkEssayMarketPapers()
+    {
+        $url = Url::where('name', 'Homework Essay Market')->first();
+        $url2 = $url->url;
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url->url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        foreach (json_decode($response) as $item) {
+            $string = $item->title->rendered;
+
+            $getArticles = Article::where('title', $string)->exists();
+            if (!$getArticles) {
+                $article = new Article();
+                $article->title = $string;
+                $article->description = $item->content->rendered;
+                $article->url_id = $url->id;
+                $article->save();
+            }
+            //echo ('<p><b>' . $string . '</b></p>' . $item->content->rendered . '</br></br>');
+        }
+    }
+
+
+    //Get Essay Writer
+    public function getEssayWriterPapers()
+    {
+        $url = Url::where('name', 'Essay Writer')->first();
+        $url2 = $url->url;
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url->url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        foreach (json_decode($response) as $item) {
+            $string = $item->title->rendered;
+
+            $getArticles = Article::where('title', $string)->exists();
+            if (!$getArticles) {
+                $article = new Article();
+                $article->title = $string;
+                $article->description = $item->content->rendered;
+                $article->url_id = $url->id;
+                $article->save();
+            }
+            //echo ('<p><b>' . $string . '</b></p>' . $item->content->rendered . '</br></br>');
+        }
+    }
 }

@@ -75,18 +75,18 @@ export default {
         const url = "/api/get-articles/";
         const comics_reload = ref(0);
         const actions = [
-            {
-                id: 1,
-                url: "details",
-                name: "Details",
-                type: "link",
-            },
-            {
-                id: 2,
-                url: "edit",
-                name: "Edit",
-                type: "link",
-            },
+            // {
+            //     id: 1,
+            //     url: "details",
+            //     name: "Details",
+            //     type: "link",
+            // },
+            // {
+            //     id: 2,
+            //     url: "edit",
+            //     name: "Edit",
+            //     type: "link",
+            // },
             {
                 id: 3,
                 url: "delete",

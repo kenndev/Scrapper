@@ -24,19 +24,27 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('articles:get')
-            ->hourly()->withoutOverlapping();
-        $schedule->command('articles:getnerd')
-            ->everyFifteenMinutes()->withoutOverlapping();
+            ->everyFifteenMinutes(1)->withoutOverlapping();
+        $schedule->command('articles:getEmergencyEssayPapers')
+            ->everyTenMinutes(1)->withoutOverlapping();
+        // $schedule->command('articles:getHomeworkcraftPapers')
+        //     ->everyTenMinutes(2)->withoutOverlapping();
+        $schedule->command('articles:getHomeworkEssayMarketPapers')
+            ->everyTenMinutes()->withoutOverlapping();
+        // $schedule->command('articles:getnerd')
+        //     ->everyFifteenMinutes()->withoutOverlapping();
         $schedule->command('articles:getcustomessays')
             ->everyFifteenMinutes(2)->withoutOverlapping();
         $schedule->command('articles:getelitecustomwritings')
             ->everyFifteenMinutes(3)->withoutOverlapping();
         $schedule->command('articles:getperfectresearch')
-            ->hourly(2)->withoutOverlapping();
+            ->everyFifteenMinutes()->withoutOverlapping();
         $schedule->command('articles:getskilledpapers')
-            ->everyThirtyMinutes(4)->withoutOverlapping();
-        $schedule->command('articles:getwritetasks')
-            ->everyFifteenMinutes(1)->withoutOverlapping();
+            ->everyTenMinutes(2)->withoutOverlapping();
+        $schedule->command('articles:getEssayWriterPapers')
+            ->everyTenMinutes()->withoutOverlapping();
+        // $schedule->command('articles:getwritetasks')
+        //     ->everyFifteenMinutes(1)->withoutOverlapping();
     }
 
     /**

@@ -1,13 +1,16 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Example from "../components/ExampleComponent";
 import ArticleDetails from "../components/ArticleDetails";
-import ArticleEdit from "../components/EditComponent"
+import ArticleEdit from "../components/EditComponent";
 
 const routes = [
     {
         path: "/home",
         name: "home",
         component: Example,
+        props: (route) => ({
+            ...route.query,
+        }),
     },
     {
         path: "/article/:id/details",
@@ -22,9 +25,9 @@ const routes = [
         props: true,
     },
     {
-        path: '/:pathMatch(.*)*',
+        path: "/:pathMatch(.*)*",
         redirect: "/home",
-    }
+    },
 ];
 
 export default createRouter({

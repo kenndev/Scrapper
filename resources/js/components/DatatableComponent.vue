@@ -4,35 +4,17 @@
             <div class="col-md-8 col-sm-12 selecs">
                 <div class="col-md-4 input-group selecs-item">
                     <label for="pageOption" class="mt-2 mr-2">Per page</label>
-                    <select
-                        class="form-select"
-                        v-model="perPage"
-                        @change="handlePerPage"
-                        id="pageOption"
-                    >
-                        <option
-                            v-for="page in pageOptions"
-                            :key="page"
-                            :value="page"
-                        >
+                    <select class="form-select" v-model="perPage" @change="handlePerPage" id="pageOption">
+                        <option v-for="page in pageOptions" :key="page" :value="page">
                             {{ page }}
                         </option>
                     </select>
                 </div>
                 <div class="col-md-4 input-group selecs-item">
                     <label for="pageOption" class="mt-2 mr-2">Company</label>
-                    <select
-                        class="form-select"
-                        v-model="companyName"
-                        @change="handleCompany"
-                        id="companyOption"
-                    >
+                    <select class="form-select" v-model="companyName" @change="handleCompany" id="companyOption">
                         <option value="0">All</option>
-                        <option
-                            v-for="company in companies"
-                            :key="company"
-                            :value="company.id"
-                        >
+                        <option v-for="company in companies" :key="company" :value="company.id">
                             {{ company.name }}
                         </option>
                     </select>
@@ -40,18 +22,9 @@
             </div>
             <div class="col-md-4 col-sm-12">
                 <div class="input-group">
-                    <input
-                        type="text"
-                        v-model="search"
-                        class="form-control"
-                        placeholder="Search..."
-                    />
+                    <input type="text" v-model="search" class="form-control" placeholder="Search..." />
                     <div class="input-group-append">
-                        <button
-                            class="btn btn-dark"
-                            type="button"
-                            @click.prevent="handleSearch"
-                        >
+                        <button class="btn btn-dark" type="button" @click.prevent="handleSearch">
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
@@ -62,24 +35,16 @@
             <table class="table table-hover" id="dataTable">
                 <thead>
                     <tr>
-                        <th
-                            scope="col"
-                            v-for="column in columns"
-                            :key="column"
-                            @click="updateSortColumn(column)"
-                        >
+                        <th scope="col" v-for="column in columns" :key="column" @click="updateSortColumn(column)">
                             {{
-                                column
-                                    .replace(/(^\w{1})|(\s+\w{1})/g, (letter) =>
-                                        letter.toUpperCase()
-                                    )
-                                    .replace("_", " ")
+                                    column
+                                        .replace(/(^\w{1})|(\s+\w{1})/g, (letter) =>
+                                            letter.toUpperCase()
+                                        )
+                                        .replace("_", " ")
                             }}
                             <span v-if="column === sortField">
-                                <i
-                                    v-if="sortOrder === 'asc'"
-                                    class="fa fa-arrow-up fa-1x"
-                                ></i>
+                                <i v-if="sortOrder === 'asc'" class="fa fa-arrow-up fa-1x"></i>
                                 <i v-else class="fa fa-arrow-down fa-1x"></i>
                             </span>
                         </th>
@@ -89,62 +54,33 @@
                     <tr v-if="tableData.length === 0">
                         <div class="m-3">No Data Found</div>
                     </tr>
-                    <tr
-                        v-else
-                        v-for="data in tableData"
-                        :key="data"
-                        :class="{
-                            highlight: data['edited'] == 1,
-                        }"
-                    >
-                        <td
-                            :class="column === 'description' ? 'col-6' : ''"
-                            v-for="column in columns"
-                            :key="column"
-                        >
+                    <tr v-else v-for="data in tableData" :key="data" :class="{
+                        highlight: data['edited'] == 1,
+                    }">
+                        <td :class="column === 'description' ? 'col-6' : ''" v-for="column in columns" :key="column">
                             <div v-if="column === 'select'">
                                 <label class="form-checkbox">
-                                    <input
-                                        type="checkbox"
-                                        :value="data.id"
-                                        v-model="selected"
-                                    />
+                                    <input type="checkbox" :value="data.id" v-model="selected" />
                                     <i class="form-icon"></i>
                                 </label>
                             </div>
                             <div v-if="column === 'actions'">
-                                <actions
-                                    :model_id="data.id"
-                                    :actions="actions"
-                                    @update-table="tableUpdated"
-                                />
+                                <actions :model_id="data.id" :actions="actions" @update-table="tableUpdated" />
                             </div>
-                            <div
-                                v-if="column == 'created_at'"
-                                @click="rowClicked(data.id)"
-                            >
+                            <div v-if="column == 'created_at'" @click="rowClicked(data.id)">
                                 {{ moment(data[column]).format("DD-MM-YYYY") }}
                             </div>
-                            <div
-                                @click="rowClicked(data.id)"
-                                v-else
-                                v-html="
-                                    column == 'description'
-                                        ? data[column].slice(0, 400) + '...'
-                                        : data[column]
-                                "
-                            ></div>
+                            <div @click="rowClicked(data.id)" v-else v-html="
+                                column == 'description'
+                                    ? data[column].slice(0, 400) + '...'
+                                    : data[column]
+                            "></div>
                         </td>
                     </tr>
                 </tbody>
             </table>
-            <paginator
-                v-if="tableData.length > 0"
-                :pagination="pagination"
-                :totalItems="tableData.length"
-                @pageChanged="handlePageChange"
-                :key="pagination_reload"
-            />
+            <paginator v-if="tableData.length > 0" :pagination="pagination" :totalItems="tableData.length"
+                @pageChanged="handlePageChange" :key="pagination_reload" />
         </div>
     </div>
 </template>
@@ -155,6 +91,7 @@ import Paginator from "./PaginatorComponent.vue";
 import Actions from "./ActionsComponent.vue";
 import moment from "moment";
 import router from "../router";
+import { useRoute } from "vue-router";
 import { useLoading } from "vue3-loading-overlay";
 import "vue3-loading-overlay/dist/vue3-loading-overlay.css";
 import { useToast } from "vue-toastification";
@@ -243,7 +180,7 @@ export default {
         };
 
         const rowClicked = (articleid) => {
-            router.push({ name: "edit", params: { id: articleid } });
+            router.push({ name: "edit", params: { id: articleid, company: companyName.value, page: page.value } });
         };
 
         const handleSearch = () => {
@@ -276,6 +213,8 @@ export default {
         };
 
         onMounted(() => {
+            companyName.value = useRoute().query.company
+            page.value = useRoute().query.page
             fetchCompanies();
             fetchData();
         });
@@ -341,15 +280,19 @@ export default {
     /* background-color: rgba(0, 128, 128, 0.6); */
     background-color: rgb(63, 224, 208);
 }
+
 .nothighlighted {
     background-color: rgba(241, 4, 16, 0.3);
 }
+
 .nothighlightedhack {
     background-color: rgba(241, 4, 16, 0.3);
 }
+
 tr:hover {
     cursor: pointer;
 }
+
 .actions {
     display: flex;
     justify-content: space-between;
