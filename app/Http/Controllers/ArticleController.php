@@ -11,7 +11,7 @@ use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ArticlesExport;
 use App\Models\Url;
-
+use Illuminate\Support\Facades\DB;
 
 class ArticleController extends Controller
 {
@@ -36,6 +36,49 @@ class ArticleController extends Controller
         echo "Done";
     }
 
+    public function getJwt()
+    {
+        $post = [
+            'username' => 'kyeujnr',
+            'password' => 'White@h1ll',
+        ];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://blog.whiteanthill.com/wp-json/jwt-auth/v1/token');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+        $response = curl_exec($ch);
+        curl_close($ch);
+        $ss = json_decode($response, true);
+        return $ss['token'];
+        // $response2["message"] = "Success. Finished Deleting";
+        // return new ArticlesResource($response2);
+
+    }
+
+    public function postUp()
+    {
+        $post = [
+            'title' => 'Test ppost',
+            'content' => 'Testing',
+            'status' => 'publish',
+        ];
+
+
+
+        $token = $this->getJwt();
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://blog.whiteanthill.com/wp-json/wp/v2/posts');
+        $authorization = "Authorization: Bearer " . $token; // Prepare the authorisation token
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array($authorization)); // Inject the token into the header
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+        $response = curl_exec($ch);
+        curl_close($ch);
+        $ss = json_decode($response, true);
+        return $response;
+    }
+
     public function updateArticle(Request $request)
     {
         $article = Article::findOrFail($request->input('id'));
@@ -45,8 +88,27 @@ class ArticleController extends Controller
             $article->edited = 1;
         }
         $article->save();
-        $response["message"] = "Record has been updated successfully";
-        return new ArticlesResource($response);
+
+        $post = [
+            'title' => $request->input('title'),
+            'content' => $request->input('description'),
+            'status' => 'publish',
+        ];
+
+
+        $token = $this->getJwt();
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://blog.whiteanthill.com/wp-json/wp/v2/posts');
+        $authorization = "Authorization: Bearer " . $token; // Prepare the authorisation token
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array($authorization)); // Inject the token into the header
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $response2["message"] = "Success. Finished Updating";
+        return new ArticlesResource($response2);
     }
 
     public function delete($id)
@@ -86,7 +148,55 @@ class ArticleController extends Controller
         return new ArticlesResource($url);
     }
 
+    public function getDublicates()
+    {
+        $duplicates = Article::select('title', DB::raw('COUNT(*) as `count`'))
+            ->groupBy('title')
+            ->havingRaw('COUNT(*) > 1')
+            ->get();
+
+        return view('articles', compact('duplicates'));
+        //echo '<pre>' . var_export($duplicates, true) . '</pre>';
+    }
+
+    public function getIfExists()
+    {
+        $string_exists = "I have a cow";
+        preg_match('/^(?>\S+\s*){1,10}/', $string_exists, $match);
+        $duplicates = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
+        echo $duplicates;
+        // return view('articles', compact('duplicates'));
+    }
+
     public function getArticles()
+    {
+        $url = Url::where('name', 'purduepapers')->first();
+        $url2 = $url->url;
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url->url);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        foreach (json_decode($response) as $item) {
+            $string = $item->title->rendered;
+
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
+            if (!$getArticles) {
+                $article = new Article();
+                $article->title = $string;
+                $article->description = $item->content->rendered;
+                $article->url_id = $url->id;
+                $article->save();
+            }
+            //echo ('<p><b>' . $string . '</b></p>' . $item->content->rendered . '</br></br>');
+        }
+    }
+
+    public function getArticles2()
     {
 
         $url = Url::get();
@@ -134,7 +244,7 @@ class ArticleController extends Controller
                             }
                         }
                         $desc->all();
-                        $getArticles = Article::where('title', $test->find('h1')[0]->innertext)->exists();
+                        $getArticles = Article::where('title', 'like', '%' . $test->find('h1')[0]->innertext . '%')->exists();
                         if (!$getArticles) {
                             $article = new Article();
                             $article->title = $test->find('h1')[0]->innertext;
@@ -167,21 +277,21 @@ class ArticleController extends Controller
         $perPage = $request->input('per_page') ?? self::PER_PAGE;
         $companySort =  $request->input('company_name');
 
-        $query = Article::where('status', 0)->orderBy($sortField, $sortOrder);
+        $query = Article::orderBy($sortField, $sortOrder);
 
         if (!is_null($searchInput)) {
             $searchQuery = "%$searchInput%";
-            $query = $query->where('title', 'like', $searchQuery)
+            $query = $query->where('status', 0)->where('title', 'like', $searchQuery)
                 ->orWhere('description', 'like', $searchQuery);
         }
 
         if (!is_null($companySort)) {
             if (!$companySort == 0) {
-                $query = $query->where('url_id', $companySort);
+                $query = $query->where('status', 0)->where('url_id', $companySort);
             }
         }
 
-        $articles = $query->paginate((int)$perPage);
+        $articles = $query->where('status', 0)->paginate((int)$perPage);
 
         return ArticlesResource::collection($articles);
     }
@@ -245,7 +355,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;
@@ -256,62 +367,6 @@ class ArticleController extends Controller
             //echo ('<p><b>' . $string . '</b></p>' . $item->content->rendered . '</br></br>');
         }
     }
-    // public function getNerdMyPaper()
-    // {
-
-    //     $url = Url::where('name', 'Nerdmypaper')->first();
-    //     $date_today = Carbon::now()->format('Y/m/d');
-    //     $url2 = $url->url . $date_today;
-
-    //     $ch = curl_init();
-    //     curl_setopt($ch, CURLOPT_URL, $url2);
-    //     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    //     $response = curl_exec($ch);
-    //     curl_close($ch);
-    //     $dom = HtmlDomParser::str_get_html($response);
-
-    //     foreach ($dom->find('section.pt-5 > div.container > div.row > div.col-lg-8 > article > div.entry-meta > span') as $test) {
-    //         $link = $test->find('a')[0]->href;
-    //         $date_created = $test->find('a time')[0]->innertext;
-
-    //         $now = Carbon::now();
-    //         $date = Carbon::parse($now)->toDateString();
-    //         $createdAt = Carbon::parse($date_created);
-    //         $createdAt = Carbon::createFromFormat('Y-m-d H:i:s', $createdAt)->format('Y-m-d');
-
-    //         if ($date === $createdAt) {
-    //             $ch = curl_init();
-    //             curl_setopt($ch, CURLOPT_URL, $link);
-    //             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    //             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    //             $response = curl_exec($ch);
-    //             curl_close($ch);
-    //             $dom = HtmlDomParser::str_get_html($response);
-
-    //             foreach ($dom->find('section.pt-5 > div.container > div.row > div.col-lg-8') as $test) {
-    //                 $desc = collect();
-    //                 $p = "";
-    //                 foreach ($test->find('div > p') as $u) {
-    //                     if (!is_null(strip_tags($u->innertext))) {
-    //                         $desc->push(['description' => strip_tags($u->innertext)]);
-    //                         $p = '<p>' . $p . $u->innertext . '</p>';
-    //                     }
-    //                 }
-    //                 $desc->all();
-    //                 $getArticles = Article::where('title', $test->find('h1')[0]->innertext)->exists();
-    //                 if (!$getArticles) {
-    //                     $article = new Article();
-    //                     $article->title = $test->find('h1')[0]->innertext;
-    //                     $article->description = $p;
-    //                     $article->url_id = $url->id;
-    //                     $article->save();
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
 
     //get articles for Skilled Papers
     public function getSkilledPapers()
@@ -328,7 +383,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;
@@ -339,65 +395,6 @@ class ArticleController extends Controller
             //echo ('<p><b>' . $string . '</b></p>' . $item->content->rendered . '</br></br>');
         }
     }
-
-    // public function getSkilledPapers()
-    // {
-
-    //     $url = Url::where('name', 'Skilledpapers')->first();
-    //     $date_today = Carbon::now()->format('Y/m/d');
-    //     $url2 = $url->url . $date_today . '/';
-
-    //     $ch = curl_init();
-    //     curl_setopt($ch, CURLOPT_URL, $url2);
-    //     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    //     $response = curl_exec($ch);
-    //     curl_close($ch);
-    //     $dom = HtmlDomParser::str_get_html($response);
-
-    //     foreach ($dom->find('section.content-area > div.site-main article.post') as $test) {
-    //         $link = $test->find('a')[0]->href;
-    //         $date_created = $test->find('a time')[0]->innertext;
-
-    //         $now = Carbon::now();
-    //         $date = Carbon::parse($now)->toDateString();
-    //         $createdAt = Carbon::parse($date_created);
-    //         $createdAt = Carbon::createFromFormat('Y-m-d H:i:s', $createdAt)->format('Y-m-d');
-
-    //         if ($date === $createdAt) {
-    //             $ch = curl_init();
-    //             curl_setopt($ch, CURLOPT_URL, $link);
-    //             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    //             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    //             $response = curl_exec($ch);
-    //             curl_close($ch);
-    //             $dom = HtmlDomParser::str_get_html($response);
-
-    //             foreach ($dom->find('section.content-area > div.site-main article.post') as $test2) {
-    //                 $desc = collect();
-    //                 $p = "";
-    //                 foreach ($test2->find('div.entry-content > p') as $u) {
-    //                     if (!is_null(strip_tags($u->innertext))) {
-    //                         $desc->push(['description' => strip_tags($u->innertext)]);
-    //                         $p = '<p>' . $p . $u->innertext . '</p>';
-    //                     }
-    //                 }
-    //                 $desc->all();
-    //                 $getArticles = Article::where('title', $test2->find('h1')[0]->innertext)->exists();
-    //                 if (!$getArticles) {
-    //                     $article = new Article();
-    //                     $article->title = $test2->find('h1')[0]->innertext;
-    //                     $article->description = $p;
-    //                     $article->url_id = $url->id;
-    //                     $article->save();
-    //                 }
-
-    //                 //echo ('<p>'.$test2->find('h1')[0]->innertext.'</p>' .'<p>'. $p. '</p>');
-    //             }
-    //         }
-    //     }
-    // }
-
 
     //get articles for Write Tasks Papers
     public function getWriteTasks()
@@ -414,7 +411,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;
@@ -425,101 +423,6 @@ class ArticleController extends Controller
             //echo ('<p><b>' . $string . '</b></p>' . $item->content->rendered . '</br></br>');
         }
     }
-    // public function getWriteTasks()
-    // {
-
-    //     $url = Url::where('name', 'Writertask')->first();
-    //     $date_today = Carbon::now()->format('Y/m/d');
-    //     $url2 = $url->url . $date_today . '/';
-
-    //     $ch = curl_init();
-    //     curl_setopt($ch, CURLOPT_URL, $url2);
-    //     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    //     $response = curl_exec($ch);
-    //     curl_close($ch);
-    //     $dom = HtmlDomParser::str_get_html($response);
-
-    //     foreach ($dom->find('body.archive > div#page > div#main > div.wf-wrap >div.wf-container-main > div#content > div.articles-list article') as $test) {
-    //         $link = $test->find('a')[0]->href;
-
-    //         $title =  $test->find('a')[0]->title;;
-
-
-    //         $ch = curl_init();
-    //         curl_setopt($ch, CURLOPT_URL, $link);
-    //         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    //         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    //         $response = curl_exec($ch);
-    //         curl_close($ch);
-    //         $dom2 = HtmlDomParser::str_get_html($response);
-    //         foreach ($dom2->find('body#the7-body > div#page > div#main > div.wf-wrap >div.wf-container-main > div#content > article') as $test2) {
-    //             $desc = collect();
-    //             $p = "";
-    //             foreach ($test2->find('p') as $u) {
-    //                 if (!is_null(strip_tags($u->innertext))) {
-    //                     $desc->push(['description' => strip_tags($u->innertext)]);
-    //                     $p = '<p>' . $p . $u->innertext . '</p>';
-    //                 }
-    //             }
-    //             $desc->all();
-    //             $getArticles = Article::where('title', $title)->exists();
-    //             if (!$getArticles) {
-    //                 $article = new Article();
-    //                 $article->title = $title;
-    //                 $article->description = $p;
-    //                 $article->url_id = $url->id;
-    //                 $article->save();
-    //             }
-    //         }
-    //     }
-    // }
-
-
-    //get articles for The Custom Essays
-    // public function getCustomEssays()
-    // {
-
-    //     $url = Url::where('name', 'Thecustomessays')->first();
-    //     $url2 = $url->url;
-    //     $ch = curl_init();
-    //     curl_setopt($ch, CURLOPT_URL, $url2);
-    //     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    //     $response = curl_exec($ch);
-    //     curl_close($ch);
-    //     $dom = HtmlDomParser::str_get_html($response);
-    //     foreach ($dom->find('body.archive > div#Wrapper > div#Content > div.content_wrapper  > div.sections_group > div.section > div.section_wrapper > div.column > div.blog_wrapper > div.posts_group > div.post-item') as $test) {
-
-    //         $link = $test->find('a')[0]->href;
-
-    //         $title =  $test->find('h2')[0]->plaintext;
-
-
-    //         $ch = curl_init();
-    //         curl_setopt($ch, CURLOPT_URL, $link);
-    //         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    //         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    //         $response = curl_exec($ch);
-    //         curl_close($ch);
-    //         $dom2 = HtmlDomParser::str_get_html($response);
-    //         foreach ($dom2->find('body.single-post > div#Wrapper > div#Content > div.content_wrapper  > div.sections_group > div.post > div.post-wrapper-content > div.section  > div.section_wrapper > div.the_content_wrapper') as $test2) {
-    //             $desc = $test2->find('div')[0];
-
-    //             $getArticles = Article::where('title', $title)->exists();
-    //             if (!$getArticles) {
-    //                 $article = new Article();
-    //                 $article->title = $title;
-    //                 $article->description = $desc;
-    //                 $article->url_id = $url->id;
-    //                 $article->save();
-    //             }
-
-    //             //echo ('<p><b>'.$title.'</b></p>' . $desc . '</br></br>');
-    //         }
-    //     }
-    // }
-
 
     public function getCustomEssays()
     {
@@ -536,7 +439,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;
@@ -565,7 +469,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = str_replace('| StudyDaddy.com', '', $item->title->rendered);
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;
@@ -593,7 +498,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;
@@ -621,7 +527,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;
@@ -650,7 +557,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;
@@ -680,7 +588,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;
@@ -709,7 +618,8 @@ class ArticleController extends Controller
         foreach (json_decode($response) as $item) {
             $string = $item->title->rendered;
 
-            $getArticles = Article::where('title', $string)->exists();
+            preg_match('/^(?>\S+\s*){1,10}/', $string, $match);
+            $getArticles = Article::where('title', 'LIKE', '%' . rtrim($match[0]) . '%')->exists();
             if (!$getArticles) {
                 $article = new Article();
                 $article->title = $string;

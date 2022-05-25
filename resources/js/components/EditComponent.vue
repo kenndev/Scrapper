@@ -35,9 +35,13 @@
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import axios from "axios";
 import { useToast } from "vue-toastification";
+import { useLoading } from "vue3-loading-overlay";
 import { reactive, onMounted, ref } from "vue";
 import router from '../router';
 import { isIntegerKey } from "@vue/shared";
+
+let loader = useLoading();
+
 
 const editorConfig = reactive({});
 const errors = ref([]);
@@ -72,6 +76,11 @@ const fetchArticle = async () => {
 };
 
 const updateArticle = async () => {
+    loader.show({
+        loader: "dots",
+        color: "#000000",
+        backgroundColor: "#050505",
+    });
     const toast = useToast();
     errors.value = "";
     try {
@@ -79,12 +88,14 @@ const updateArticle = async () => {
         toast.success(res.data.data.message, {
             timeout: 5000,
         });
+        loader.hide();
         if (props.company == 0) {
             router.push({
                 name: "home", query: {
                     page: props.page,
                 },
             });
+
         } else {
             router.push({
                 name: "home", query: {
@@ -126,6 +137,7 @@ const deleteArticle = async (article_id) => {
 };
 
 onMounted(() => {
+
     console.log(props.company + " " + props.page)
     fetchArticle();
 });

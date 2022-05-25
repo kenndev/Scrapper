@@ -6,26 +6,17 @@
                     <div class="card-header">
                         <div class="row">
                             <div class="col-md-6 col-lg-3 col-sm-12">
-                                <Datepicker
-                                    v-model="date"
-                                    :transitions="true"
-                                    :format="format"
-                                ></Datepicker>
+                                <Datepicker v-model="date" :transitions="true" :format="format"></Datepicker>
                             </div>
                             <div class="col-md-6 col-lg-9 col-sm-12 mt-2">
                                 <div class="excel float-sm-left mb-2">
-                                    <button
-                                        class="btn-block btn btn-sm btn-primary float-sm-left"
-                                        @click="download"
-                                    >
+                                    <button class="btn-block btn btn-sm btn-primary float-sm-left" @click="download">
                                         Download excel
                                     </button>
                                 </div>
                                 <div class="excel float-sm-left mb-2 ms-1">
-                                    <button
-                                        class="btn-block btn btn-sm btn-primary float-sm-left"
-                                        @click="deleteSelected"
-                                    >
+                                    <button class="btn-block btn btn-sm btn-primary float-sm-left"
+                                        @click="deleteSelected">
                                         Delete Selected
                                     </button>
                                 </div>
@@ -33,19 +24,13 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <datatable-component
-                            :url="url"
-                            :columns="[
-                                'select',
-                                'title',
-                                'description',
-                                'created_at',
-                                'actions',
-                            ]"
-                            :actions="actions"
-                            :key="comics_reload"
-                            ref="exposedFunc"
-                        />
+                        <datatable-component :url="url" :columns="[
+                            'select',
+                            'title',
+                            'description',
+                            'created_at',
+                            'actions',
+                        ]" :actions="actions" :key="comics_reload" ref="exposedFunc" />
                     </div>
                 </div>
             </div>
@@ -57,10 +42,10 @@
 import DatatableComponent from "./DatatableComponent.vue";
 import { useLoading } from "vue3-loading-overlay";
 import "vue3-loading-overlay/dist/vue3-loading-overlay.css";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import Datepicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
-
+import axios from "axios";
 export default {
     name: "Example",
     components: {
@@ -68,6 +53,7 @@ export default {
         Datepicker,
     },
     setup() {
+    
         const exposedFunc = ref();
 
         let loader = useLoading();
@@ -94,8 +80,8 @@ export default {
                 type: "button",
             },
         ];
-       
-       
+
+
         const deleteSelected = () => {
             exposedFunc.value.getSelectedArticles()
         };
@@ -137,7 +123,7 @@ export default {
             date,
             format,
             download,
-            deleteSelected,
+            deleteSelected
         };
     },
 };

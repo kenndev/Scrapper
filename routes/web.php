@@ -23,7 +23,10 @@ Route::middleware('auth')->get('/articles',[ArticleController::class, 'index']);
 
 Route::middleware('auth')->get('/exportarticles', [ArticleController::class, 'export'])->name('export.articles');
 
-//Route::get('test',[ArticleController::class,'getHomeworkEssayMarketPapers']);
+Route::get('postup',[ArticleController::class,'postUp']);
+Route::get('test',[ArticleController::class,'getArticles']);
+Route::get('duplicates', [ArticleController::class, 'getDublicates']);
+Route::get('exists', [ArticleController::class,'getIfExists']);
 
 Auth::routes(['register' => false]);
 

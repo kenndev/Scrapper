@@ -27,5 +27,6 @@ Route::get('companies', [ArticleController::class, 'companies']);
 Route::post('deletebulk',[ArticleController::class, 'deleteBulk']);
 
 Route::get('clear',[ArticleController::class, 'clear']);
+Route::get('getjwt',[ArticleController::class, 'getJwt']);
 
 Route::get('article-details/{id}', [ArticleController::class, 'show']);

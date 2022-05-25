@@ -29,6 +29,7 @@
         "@vuepic/vue-datepicker": "^3.2.0",
         "cheerio": "^1.0.0-rc.10",
         "moment": "^2.29.1",
+        "pinia": "^2.0.14",
         "puppeteer": "^13.3.2",
         "unsplash-js": "^7.0.15",
         "vue-loader": "^17.0.0",
